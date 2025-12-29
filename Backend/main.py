@@ -1,0 +1,1 @@
+print(f"Hello its my Gen ai project")
