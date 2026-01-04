@@ -1,1 +1,7 @@
-print(f"Hello its my Gen ai project")
+from fastapi import FastAPI
+
+
+app = FastAPI()
+@app.get("/")
+async def root():
+    return {"message": "ING Incident Analyzer API"}
