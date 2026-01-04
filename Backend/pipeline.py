@@ -4,12 +4,18 @@ import re
 
 from dotenv import load_dotenv
 from google import genai
-
+from langchain.schema import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from .embeddings import TransformersEmbedding
+from chromadb import HttpClient
+from langchain_chroma import Chroma
 
 
 GEMINI_MODEL = "gemini-2.5-flash"
 TEMPERATURE = 0.2
-
+SIMILARITY_THRESHOLD = 0.5
+CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 200
 G_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class GeminiLLM:
@@ -67,3 +73,24 @@ Format:
 
 If no patterns exist, state that clearly.
 """
+    
+class IncidentAnalyzer:
+    def __init__(self):
+        self.llm = GeminiLLM()
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=CHUNK_SIZE,
+            chunk_overlap=CHUNK_OVERLAP
+        )
+        self.embeddings = TransformersEmbedding("thenlper/gte-small")
+        self.vectorstore = Chroma(
+            collection_name="incidents",
+            client=HttpClient(host="localhost", port=8000),
+            embedding_function=self.embeddings
+        )
+
+    def get_incidents(self) -> List[Dict[str, str]]:
+        try:
+            docs = self.vectorstore.get()["documents"]
+            return [self.parse_incident_string(d) for d in docs]
+        except Exception:
+            return []
