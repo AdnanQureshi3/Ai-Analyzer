@@ -1,0 +1,10 @@
+google-genai
+langchain
+langchain-community
+langchain-chroma
+chromadb
+transformers
+torch
+pydantic
+python-dotenv
+sentence-transformers
