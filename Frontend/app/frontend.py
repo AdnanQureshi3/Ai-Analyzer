@@ -155,3 +155,117 @@ def create_severity_timeline(incidents):
                   labels={'date': 'Date', 'count': 'Number of Incidents', 'severity': 'Severity'})
     
     st.plotly_chart(fig, use_container_width=True)
+
+
+
+def create_mttr_by_category(incidents):
+    """Create MTTR by category chart"""
+    if not incidents:
+        incidents = create_sample_data()
+    
+    df = pd.DataFrame(incidents)
+    
+    if df.empty or 'category' not in df.columns or 'resolution_time_mins' not in df.columns:
+        return
+    
+    mttr_by_category = df.groupby('category')['resolution_time_mins'].mean().reset_index()
+    mttr_by_category.columns = ['Category', 'MTTR_Minutes']
+    
+    fig = px.bar(mttr_by_category, x='Category', y='MTTR_Minutes',
+                 title='Mean Time to Resolution by Category',
+                 labels={'MTTR_Minutes': 'MTTR (Minutes)', 'Category': 'Category'})
+    fig.update_layout(xaxis_tickangle=-45)
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+def create_trend_analysis(incidents):
+    """Create trend analysis chart"""
+    if not incidents:
+        incidents = create_sample_data()
+    
+    df = pd.DataFrame(incidents)
+    
+    if df.empty or 'timestamp' not in df.columns:
+        return
+    
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df['week'] = df['timestamp'].dt.isocalendar().week
+    df['year'] = df['timestamp'].dt.year
+    weekly_trends = df.groupby(['year', 'week']).size().reset_index(name='count')
+    weekly_trends['date'] = weekly_trends.apply(lambda x: f"{x['year']}-W{x['week']}", axis=1)
+    
+    fig = px.line(weekly_trends, x='date', y='count', 
+                  title='Weekly Incident Trends',
+                  labels={'date': 'Week', 'count': 'Number of Incidents'})
+    fig.update_layout(xaxis_tickangle=-45)
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+def create_heatmap(incidents):
+    """Create incident heatmap by day of week and hour"""
+    if not incidents:
+        incidents = create_sample_data()
+    
+    df = pd.DataFrame(incidents)
+    
+    if df.empty or 'timestamp' not in df.columns:
+        return
+    
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df['hour'] = df['timestamp'].dt.hour
+    df['day_of_week'] = df['timestamp'].dt.day_name()
+    df['day_of_week'] = pd.Categorical(df['day_of_week'], 
+                                      categories=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                                      ordered=True)
+    
+    heatmap_data = df.groupby(['day_of_week', 'hour']).size().reset_index(name='count')
+    
+    fig = px.density_heatmap(heatmap_data, x='hour', y='day_of_week', z='count',
+                            title='Incident Heatmap by Day and Hour',
+                            labels={'hour': 'Hour of Day', 'day_of_week': 'Day of Week', 'count': 'Incidents'})
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+def create_severity_distribution(incidents):
+    """Create severity distribution chart"""
+    if not incidents:
+        incidents = create_sample_data()
+    
+    df = pd.DataFrame(incidents)
+    
+    if df.empty or 'severity' not in df.columns:
+        return
+    
+    severity_counts = df['severity'].value_counts().reset_index()
+    severity_counts.columns = ['Severity', 'Count']
+    
+    # Define severity order and colors
+    severity_order = ['Critical', 'High', 'Medium', 'Low']
+    colors = ['#FF4B4B', '#FF8C4B', '#FFC44B', '#4BAEFF']
+    
+    fig = px.bar(severity_counts, x='Severity', y='Count', color='Severity',
+                 title='Incidents by Severity Level',
+                 category_orders={"Severity": severity_order},
+                 color_discrete_sequence=colors)
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+def create_top_incidents_table(incidents):
+    """Create table of recent incidents"""
+    if not incidents:
+        incidents = create_sample_data()
+    
+    df = pd.DataFrame(incidents)
+    
+    if df.empty:
+        return
+    
+    # Select and format columns for display
+    display_cols = ['incident_id', 'timestamp', 'category', 'severity']
+    if all(col in df.columns for col in display_cols):
+        recent_incidents = df[display_cols].copy()
+        recent_incidents['timestamp'] = pd.to_datetime(recent_incidents['timestamp']).dt.strftime('%Y-%m-%d %H:%M')
+        recent_incidents = recent_incidents.sort_values('timestamp', ascending=False).head(10)
+        
+        st.subheader("📋 Recent Incidents")
+        st.dataframe(recent_incidents, use_container_width=True, hide_index=True)
