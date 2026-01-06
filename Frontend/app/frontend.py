@@ -269,3 +269,19 @@ def create_top_incidents_table(incidents):
         
         st.subheader("📋 Recent Incidents")
         st.dataframe(recent_incidents, use_container_width=True, hide_index=True)
+
+
+
+
+
+if __name__ == "__main__":
+    # Initialize session state
+    
+    if 'page' not in st.session_state:
+        st.session_state.page = "Dashboard"
+    
+    
+    # setup_sidebar()
+    
+    # Run main application
+    main()
