@@ -1,10 +1,3 @@
-from fastapi import FastAPI
-
-
-app = FastAPI()
-@app.get("/")
-async def root():
-    return {"message": "ING Incident Analyzer API"}
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles

@@ -14,6 +14,9 @@ from chromadb import HttpClient
 from .embeddings import TransformersEmbedding
 
 
+# =====================
+# CONFIG
+# =====================
 DEFAULT_CHROMA_DB_PATH = "/app/chroma_data"
 GEMINI_MODEL = "gemini-2.5-flash"
 SIMILARITY_THRESHOLD = 0.5
@@ -29,7 +32,9 @@ logger = logging.getLogger(__name__)
 G_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-
+# =====================
+# LLM WRAPPER
+# =====================
 class GeminiLLM:
     def invoke(self, prompt: str) -> str:
         if not prompt or not prompt.strip():
@@ -52,7 +57,9 @@ class GeminiLLM:
         return response.text
 
 
-
+# =====================
+# PROMPTS (STRONG + SAFE)
+# =====================
 class PromptTemplates:
     @staticmethod
     def root_cause(context: str, question: str) -> str:
@@ -62,18 +69,27 @@ You are a senior Site Reliability Engineer and Incident Response Lead.
 Your task is to perform a **root cause analysis** using real operational reasoning.
 Do NOT give generic answers. If data is insufficient, clearly state assumptions.
 
+========================
 HISTORICAL INCIDENT DATA
+========================
 {context}
 
+========================
 CURRENT INCIDENT
+========================
 {question}
 
+========================
 INSTRUCTIONS
+========================
 - Use only the information given above.
 - Correlate patterns across historical incidents.
 - Be concrete and technical.
 - Do not repeat the incident description.
 
+========================
+OUTPUT FORMAT (MANDATORY)
+========================
 
 Primary Root Cause:
 - <single most likely cause>
@@ -101,15 +117,19 @@ If analysis is not possible, say:
         return f"""
 You are a reliability analyst identifying **recurring patterns** across incidents.
 
-
+========================
 HISTORICAL INCIDENT DATA
-
+========================
 {context}
 
+========================
 FOCUS QUESTION
+========================
 {question}
 
+========================
 OUTPUT FORMAT
+========================
 
 Recurring Patterns:
 - <pattern 1>
@@ -129,6 +149,9 @@ If no meaningful pattern exists, explicitly state that.
 """
 
 
+# =====================
+# CORE ANALYZER
+# =====================
 class IncidentAnalyzer:
     def __init__(self):
         self.persist_directory = os.getenv("CHROMA_DB_PATH", DEFAULT_CHROMA_DB_PATH)

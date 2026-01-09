@@ -1,0 +1,39 @@
+# 1) Build stage
+FROM python:3.11-slim AS builder
+WORKDIR /app
+COPY requirements.txt .
+# RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+torch --extra-index-url https://download.pytorch.org/whl/cpu
+
+
+# 2) Final stage
+FROM python:3.11-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only installed packages and app code
+# COPY --from=builder /root/.local /root/.local
+# ENV PATH=/root/.local/bin:$PATH
+# install runtime deps…
+COPY --from=builder /usr/local /usr/local
+
+# copy your code
+COPY . .
+
+# ensure /app is on PYTHONPATH
+ENV PYTHONPATH=/app
+
+# Create non-root user
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+RUN groupadd -g ${GROUP_ID} appuser \
+ && useradd -u ${USER_ID} -g appuser -s /bin/sh -m appuser \
+ && mkdir chroma_data \
+ && chown -R appuser:appuser /app
+
+USER appuser
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
