@@ -164,7 +164,7 @@ class IncidentAnalyzer:
         self.embeddings = TransformersEmbedding("thenlper/gte-small")
 
         self.vectorstore = Chroma(
-            collection_name="incidents",
+            collection_name="incidents-new",
             client=HttpClient(host="localhost", port=8000),
             embedding_function=self.embeddings
         )
@@ -179,16 +179,16 @@ class IncidentAnalyzer:
     def ingest_incident(self, incident: Dict[str, Any]) -> bool:
         try:
             content = f"""
-INCIDENT ID: {incident.get('incident_id')}
-TIMESTAMP: {incident.get('timestamp')}
-CATEGORY: {incident.get('category')}
-SEVERITY: {incident.get('severity')}
-DESCRIPTION: {incident.get('description')}
-ROOT CAUSE: {incident.get('root_cause', 'Unknown')}
-RESOLUTION: {incident.get('resolution', 'Unknown')}
-IMPACT: {incident.get('impact', 'Unknown')}
-RESOLUTION TIME MINS: {incident.get('resolution_time_mins')}
-"""
+        INCIDENT ID: {incident.get('incident_id')}
+        TIMESTAMP: {incident.get('timestamp')}
+        CATEGORY: {incident.get('category')}
+        SEVERITY: {incident.get('severity')}
+        DESCRIPTION: {incident.get('description')}
+        ROOT CAUSE: {incident.get('root_cause', 'Unknown')}
+        RESOLUTION: {incident.get('resolution', 'Unknown')}
+        IMPACT: {incident.get('impact', 'Unknown')}
+        RESOLUTION TIME MINS: {incident.get('resolution_time_mins')}
+        """
 
             chunks = self.text_splitter.split_text(content)
 
@@ -235,6 +235,7 @@ RESOLUTION TIME MINS: {incident.get('resolution_time_mins')}
 
         docs = self.search_incidents(query, k)
         context = self._format_docs(docs)
+        print(f"Context for root cause analysis:\n{context} ,this is query {query}")
 
         prompt = PromptTemplates.root_cause(context, query)
 
